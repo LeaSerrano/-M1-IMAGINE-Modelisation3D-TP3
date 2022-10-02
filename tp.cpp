@@ -290,57 +290,121 @@ float max_valence (std::vector<unsigned int> i_valence) {
 //TP3 Ex1-2
 //
 std::vector<Vec3> HermiteCubicCurve(Vec3 P0, Vec3 P1, Vec3 V0, Vec3 V1, long nbU) {
-    float pas = 1/(float)nbU;
+    std::vector<Vec3> P;
+    P.resize(nbU);
     float F1, F2, F3, F4;
     Vec3 Pu;
-    std::vector<Vec3> P;
+    int cpt = 0;
 
-    for (float u = 0; u < 1; u=u+pas) {
+    for (float u = 0; u < 1; u+=(1/(float)nbU)) {
         F1 = 2*pow(u, 3) - 3*pow(u, 2) + 1;
         F2 = -2*pow(u, 3) + 3*pow(u, 2);
         F3 = pow(u, 3) - 2*pow(u, 2) + u;
         F4 = pow(u, 3) - pow(u, 2);
         Pu = F1*P0 + F2*P1 + F3*V0 + F4*V1;
 
-        P.push_back(Pu);
+        P[cpt] = Pu;
+        cpt++;
     }
     return P;
 }
 
 float fact(float n) {
-    float factoriel = n;
-    for (float i = 1; i < n; i++) {
-        factoriel *= (n-i);
+    float factoriel = 1;
+    for (float i = 1; i <= n; i++) {
+        factoriel *= i;
     }
     return factoriel;
 }
 
 std::vector<Vec3> BezierCurveBernstein(std::vector<Vec3> TabControlPoint, long nbControlPoint, long nbU) {
     std::vector<Vec3> P;
-    P.clear();
     P.resize(nbU);
     float Bu;
     Vec3 Pu;
-    float pas = 1/(float)nbU;
     float t1, t2, t3;
+    int cpt = 0;
 
-    for (float u = 0; u < nbU; u=u+pas) {
+    for (float u = 0; u < 1; u+=(1/(float)nbU)) {
         Pu = Vec3 (0., 0., 0.);
         for (int i = 0; i < nbControlPoint; i++) {
-            t1 = fact(nbControlPoint)/(fact(i)*fact(nbControlPoint-i));
+            t1 = fact(nbControlPoint-1)/(fact(i)*fact(nbControlPoint-1-i));
             t2 = pow(u, i);
-            t3 = pow((1-u), (nbControlPoint-i));
+            t3 = pow((1-u), (nbControlPoint-1-i));
             Bu = t1 * t2 * t3;
-            Pu = Bu*TabControlPoint[i];
-            //std::cout << Bu*TabControlPoint[i] << " " << Pu << std::endl;
+            Pu += Bu*TabControlPoint[i];
         }
-        P.push_back(Pu);
-        std::cout << P[0] << " " << P[1] << " " << P[2] << std::endl;
+        P[cpt] = Pu;
+        cpt++;
+        Pu = Vec3 (0., 0., 0.);
     }
 
     return P;
 
 }
+
+Vec3 Casteljau (std::vector<Vec3> TabControlPoint, int r, float u, int i) {
+    if (r == 0) {
+        return TabControlPoint[i];
+    }
+    return (1-u)*Casteljau(TabControlPoint, r-1, u, i) + u*Casteljau(TabControlPoint, r-1, u, i+1);
+}
+
+std::vector<Vec3> BezierCurveByCasteljau(std::vector<Vec3> TabControlPoint, long nbControlPoint, long nbU) {
+    std::vector<Vec3> P;
+    P.resize(nbU);
+    int cpt = 0;
+    int i = 0;
+
+    for (float u = 0; u < 1; u+=(1/(float)nbU)) {
+        P[cpt] = Casteljau(TabControlPoint, TabControlPoint.size()-1, u , i);
+        cpt++;
+    }
+    //std::cout << P[0] << " " << P[1] << " " << P[2] << " " << P[3] << std::endl;
+    return P;
+    
+}
+
+/*std::vector<Vec3> getCasteljauPoint(std::vector<Vec3> TabControlPoint, int r, int i, double t) { 
+    if (r == 0) {
+        return TabControlPoint[i];
+    }
+
+    std::vector<Vec3> P1 = getCasteljauPoint(TabControlPoint, r-1, i, t);
+    std::vector<Vec3> P2 = getCasteljauPoint(TabControlPoint, r-1, i+1, t);
+
+    std::vector<Vec3> resultat = (1-t)*P1 + t*P2;
+
+    return resultat;
+}
+
+std::vector<Vec3> BezierCurveByCasteljau(std::vector<Vec3> TabControlPoint, long nbControlPoint, long nbU) {
+    std::vector<Vec3> P;
+    int cpt = 0;
+    for (float u = 0; u < 1; u+=(1/(float)nbU) {
+        P[cpt] = getCasteljauPoint(TabControlPoint, TabControlPoint.size()-1, 0, u);
+        cpt++;
+    }
+}*/
+
+/*private void drawCasteljau(List<point> points) {
+            Point tmp;
+            for (double t = 0; t <= 1; t += 0.001) { 
+                tmp = getCasteljauPoint(points.Count-1, 0, t);
+                image.SetPixel(tmp.X, tmp.Y, color);
+            }
+        }
+
+
+    private Point getCasteljauPoint(int r, int i, double t) { 
+        if(r == 0) return points[i];
+
+        Point p1 = getCasteljauPoint(r - 1, i, t);
+        Point p2 = getCasteljauPoint(r - 1, i + 1, t);
+
+        return new Point((int) ((1 - t) * p1.X + t * p2.X), (int) ((1 - t) * p1.Y + t * p2.Y));
+    }*/
+
 //
 
 //Input mesh loaded at the launch of the application
@@ -771,26 +835,84 @@ void display () {
     int nbPoints = 15;
 
     std::vector<Vec3> hermiteCubicCurve = HermiteCubicCurve(P0, P1, V0, V1, nbPoints);
+    /*DrawCurve(hermiteCubicCurve, nbPoints);
 
-    //DrawCurve(hermiteCubicCurve, nbPoints);
+    glBegin(GL_POINTS);
+    glColor3f(1.0, 0.0, 0.0);
+    glVertex3f(P0[0], P0[1], P0[2]);
+    glVertex3f(P1[0], P1[1], P1[2]);
+    glVertex3f(V0[0], V0[1], V1[2]);
+    glVertex3f(V1[0], V1[1], V1[2]);
+    glEnd();*/
 
     //Bernstein
     Vec3 P2 = Vec3(0, 0, 0);
-    Vec3 P3 = Vec3(1, 1, 0); 
-    Vec3 P4 = Vec3(2, 1, 0);
-    Vec3 P5 = Vec3(2, -1, 0); 
-    std::vector<Vec3> TabControlPoint;
-    TabControlPoint.push_back(P2);
-    TabControlPoint.push_back(P3);
-    TabControlPoint.push_back(P4);
-    //TabControlPoint.push_back(P5);
-    long nbControlPoint = 3;
-    long nbU = 10;
+    Vec3 P3 = Vec3(0, 1, 0); 
+    Vec3 P4 = Vec3(1, 1, 0);
+    Vec3 P5 = Vec3(1, 0, 0); 
+    std::vector<Vec3> TabControlPointB;
+    TabControlPointB.push_back(P2);
+    TabControlPointB.push_back(P3);
+    TabControlPointB.push_back(P4);
+    TabControlPointB.push_back(P5);
+    long nbControlPointB = TabControlPointB.size();
+    long nbUB = 10;
 
-    std::vector<Vec3> bezierCurveBernstein = BezierCurveBernstein(TabControlPoint, nbControlPoint, nbU);
+    std::vector<Vec3> bezierCurveBernstein = BezierCurveBernstein(TabControlPointB, nbControlPointB, nbUB);
+    /*DrawCurve(bezierCurveBernstein, nbU);
 
-    DrawCurve(bezierCurveBernstein, nbU);
+    glBegin(GL_POINTS);
+    glColor3f(1.0, 0.0, 0.0);
+    glVertex3f(P2[0], P2[1], P2[2]);
+    glVertex3f(P3[0], P3[1], P3[2]);
+    glVertex3f(P4[0], P4[1], P4[2]);
+    glVertex3f(P5[0], P5[1], P5[2]);
+    glEnd();*/
 
+    /*Vec3 P6 = Vec3(0, 1, 0);
+    Vec3 P7 = Vec3(0, 0, 0); 
+    Vec3 P8 = Vec3(1, 0, 0);
+    Vec3 P9 = Vec3(1, 0.5, 0); 
+    std::vector<Vec3> TabControlPointC;
+    TabControlPointC.push_back(P6);
+    TabControlPointC.push_back(P7);
+    TabControlPointC.push_back(P8);
+    TabControlPointC.push_back(P9);*/
+
+    Vec3 P10 = Vec3(0, 0, 0);
+    Vec3 P11 = Vec3(0.25, 0.75, 0); 
+    Vec3 P12 = Vec3(0.4, 0.4, 0);
+    Vec3 P13 = Vec3(0.5, 0, 0); 
+    Vec3 P14 = Vec3(0.75, 0, 0);
+    Vec3 P15 = Vec3(1, 0.5, 0); 
+    std::vector<Vec3> TabControlPointC;
+    TabControlPointC.push_back(P10);
+    TabControlPointC.push_back(P11);
+    TabControlPointC.push_back(P12);
+    TabControlPointC.push_back(P13);
+    TabControlPointC.push_back(P14);
+    TabControlPointC.push_back(P15);
+
+    long nbControlPointC = TabControlPointC.size();
+    long nbUC = 30;
+
+    std::vector<Vec3> bezierCurveByCasteljau = BezierCurveByCasteljau(TabControlPointC, nbControlPointC, nbUC);
+    DrawCurve(bezierCurveByCasteljau, nbUC);
+
+    glBegin(GL_POINTS);
+    glColor3f(1.0, 0.0, 0.0);
+    /*glVertex3f(P6[0], P6[1], P6[2]);
+    glVertex3f(P7[0], P7[1], P7[2]);
+    glVertex3f(P8[0], P8[1], P8[2]);
+    glVertex3f(P9[0], P9[1], P9[2]);*/
+    glVertex3f(P10[0], P10[1], P10[2]);
+    glVertex3f(P11[0], P11[1], P11[2]);
+    glVertex3f(P12[0], P12[1], P12[2]);
+    glVertex3f(P13[0], P13[1], P13[2]);
+    glVertex3f(P14[0], P14[1], P14[2]);
+    glVertex3f(P15[0], P15[1], P15[2]);
+    glEnd();
+    
     glFlush ();
     glutSwapBuffers ();
 }
