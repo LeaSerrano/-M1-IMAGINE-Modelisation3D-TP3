@@ -944,7 +944,7 @@ void display () {
     glVertex3f(P9[0], P9[1], P9[2]);
     glEnd();    
 
-    //Exemple 1 tracé de points :
+    //Exemple 2 tracé de points :
     /*glBegin(GL_POINTS);
     glColor3f(1.0, 0.0, 0.0);
     glVertex3f(P10[0], P10[1], P10[2]);
